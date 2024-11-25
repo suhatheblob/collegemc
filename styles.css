@@ -1,0 +1,124 @@
+body {
+  background-image: url('./images/cmcbg.png'); /* Adjust the path if needed */
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  margin: 0; /* Remove any default margin */
+}
+
+.content-block {
+  background-color: #FFC4D1; /* Cherry blossom pink */
+  width: 60%;
+  max-width: 800px; /* Limits the width on larger screen */
+  height: 300px; /* Fixed height */
+  overflow: auto; /* Allows scrolling if content overflows */
+  padding: 20px; /* Adds inner spacing */
+  margin: 50px auto; /* Centers the block horizontally and adds vertical spacing */
+  border-radius: 15px; /* Rounds the corners */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Creates a soft drop shadow */
+  text-align: center; /* Centers the text inside the block */
+  opacity: 0.9; /* Makes the block slightly transparent */
+  font-family: 'Quicksand', sans-serif;
+  color: #333;
+  box-sizing: border-box;
+  display: block; /* Removed flexbox completely, using block-level layout */
+}
+
+#falling-leaves {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;  /* Ensures clicks go through the animation */
+  overflow: hidden;
+  z-index: -1;
+}
+
+/* Leaf setup */
+.leaf {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background-image: url('images/cherryblossomleaf.png');
+  background-size: cover;
+  opacity: 0.8;
+  animation: fall linear infinite;
+  animation-duration: 15s;  /* Slow and steady fall */
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+h1 {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 50px;
+  color: #544c4a;
+  margin: 10px 0;
+  text-align: center;
+}
+
+h2 {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 30px;
+  text-align: center;
+}
+
+p {
+  font-size: 16px;
+  font-family: 'Quicksand', sans-serif;
+  text-align: center;
+}
+
+hr {
+  display: none; /* Hides the horizontal rule */
+}
+
+.discord-link {
+  font-family: 'Quicksand', sans-serif; /* Set the font to Quicksand */
+  font-size: 12px; /* Set font size to 12px */
+  color: #D3D3D3; /* Light gray color */
+}
+
+.support-us {
+  background-color: #FFC4D1; /* Cherry blossom pink */
+  text-align: center;
+  padding: 10px;  /* Less padding */
+  margin: 30px auto; /* Smaller vertical spacing */
+  width: 60%; /* Reduced width */
+  max-width: 400px; /* Even smaller max width */
+  border-radius: 10px; /* Slightly rounded corners */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Smaller shadow */
+  font-family: 'Quicksand', sans-serif;
+  color: #333;
+}
+
+.support-us h3 {
+  font-size: 18px;  /* Smaller text */
+  margin-bottom: 8px; /* Reduced margin */
+  color: #544c4a;
+}
+
+.support-us p {
+  font-size: 14px; /* Smaller text */
+  margin-bottom: 10px; /* Reduced margin */
+}
+
+.kofi-link img {
+  width: 40px; /* Even smaller logo */
+  height: auto;
+  cursor: pointer;
+}
+
+.kofi-link:hover img {
+  transform: scale(1.1); /* Slight zoom on hover */
+  transition: transform 0.3s ease;
+}
