@@ -1,12 +1,13 @@
+/* Set the background image and other body styles */
 body {
-<<<<<<< HEAD
-  background-image: url('./images/cmcbg.png'); /* Adjust the path if needed */
+  background-image: url('/images/cmcbg.png'); /* Adjusted to use an absolute path */
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   margin: 0; /* Remove any default margin */
 }
 
+/* Content block styles */
 .content-block {
   background-color: #FFC4D1; /* Cherry blossom pink */
   width: 60%;
@@ -25,6 +26,7 @@ body {
   display: block; /* Removed flexbox completely, using block-level layout */
 }
 
+/* Falling leaves animation setup */
 #falling-leaves {
   position: fixed;
   top: 0;
@@ -48,6 +50,7 @@ body {
   animation-duration: 15s;  /* Slow and steady fall */
 }
 
+/* Keyframes for falling leaf animation */
 @keyframes fall {
   0% {
     transform: translateY(-100px) rotate(0deg);
@@ -59,6 +62,7 @@ body {
   }
 }
 
+/* Header styles */
 h1 {
   font-family: 'Quicksand', sans-serif;
   font-size: 50px;
@@ -67,28 +71,33 @@ h1 {
   text-align: center;
 }
 
+/* Subheader styles */
 h2 {
   font-family: 'Quicksand', sans-serif;
   font-size: 30px;
   text-align: center;
 }
 
+/* Paragraph styles */
 p {
   font-size: 16px;
   font-family: 'Quicksand', sans-serif;
   text-align: center;
 }
 
+/* Hides the horizontal rule */
 hr {
   display: none; /* Hides the horizontal rule */
 }
 
+/* Discord link styles */
 .discord-link {
   font-family: 'Quicksand', sans-serif; /* Set the font to Quicksand */
   font-size: 12px; /* Set font size to 12px */
   color: #D3D3D3; /* Light gray color */
 }
 
+/* Support us section styles */
 .support-us {
   background-color: #FFC4D1; /* Cherry blossom pink */
   text-align: center;
@@ -102,32 +111,28 @@ hr {
   color: #333;
 }
 
+/* Support us header styles */
 .support-us h3 {
   font-size: 18px;  /* Smaller text */
   margin-bottom: 8px; /* Reduced margin */
   color: #544c4a;
 }
 
+/* Support us paragraph styles */
 .support-us p {
   font-size: 14px; /* Smaller text */
   margin-bottom: 10px; /* Reduced margin */
 }
 
+/* Ko-Fi link image styles */
 .kofi-link img {
   width: 40px; /* Even smaller logo */
   height: auto;
   cursor: pointer;
 }
 
+/* Ko-Fi link image hover effect */
 .kofi-link:hover img {
   transform: scale(1.1); /* Slight zoom on hover */
   transition: transform 0.3s ease;
 }
-=======
-    background-image: url('./cmcbg.webp');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-  }   
-  
->>>>>>> 7e25fc1d8d56a9e99405da662fe48180df58a99d
