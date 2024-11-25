@@ -1,4 +1,5 @@
 body {
+<<<<<<< HEAD
   background-image: url('./images/cmcbg.png'); /* Adjust the path if needed */
   background-size: cover;
   background-position: center;
@@ -122,3 +123,11 @@ hr {
   transform: scale(1.1); /* Slight zoom on hover */
   transition: transform 0.3s ease;
 }
+=======
+    background-image: url('./cmcbg.webp');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }   
+  
+>>>>>>> 7e25fc1d8d56a9e99405da662fe48180df58a99d
