@@ -4,6 +4,12 @@ body {
   background-position: center;
   background-attachment: fixed;
   margin: 0;
+  cursor: url('images/cursor.png') 0 0, pointer;
+}
+
+/* Add hover state cursor for clickable elements */
+a, button, .staff-member, .kofi-link, .leaf {
+  cursor: url('images/cursor.png') 0 0, pointer;
 }
 
 .content-block {
@@ -63,7 +69,7 @@ body {
 }
 
 .staff-member .name {
-  font-weight: bold;  /* Changed from 600 to bold */
+  font-weight: 600;
   margin: 5px 0;
 }
 
@@ -100,20 +106,27 @@ body {
   font-family: 'Quicksand', sans-serif;
 }
 
+.staff-info p {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #333;
+  font-family: 'Quicksand', sans-serif;
+}
+
 .content-block ol {
   list-style: none;
-  counter-reset: lower-roman;  /* Changed from roman to lower-roman */
+  counter-reset: roman;
   padding-left: 0;
   text-align: center;
 }
 
 .content-block ol li {
-  counter-increment: lower-roman;  /* Changed from roman to lower-roman */
+  counter-increment: roman;
   margin: 10px 0;
 }
 
 .content-block ol li::before {
-  content: counter(lower-roman, lower-roman) ". ";  /* Changed from roman to lower-roman */
+  content: counter(roman, lower-roman) ". ";
   margin-right: 5px;
 }
 
