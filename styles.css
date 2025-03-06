@@ -4,12 +4,19 @@ body {
   background-position: center;
   background-attachment: fixed;
   margin: 0;
-  cursor: url('images/cursor.png') 0 0, pointer;
+  cursor: url('images/cursor.png') 8 8, auto;
 }
 
 /* Add hover state cursor for clickable elements */
 a, button, .staff-member, .kofi-link, .leaf {
-  cursor: url('images/cursor.png') 0 0, pointer;
+  cursor: url('images/cursor.png') 8 8, auto;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto;
+  max-width: 150px;
+  height: auto;
 }
 
 .content-block {
@@ -255,5 +262,3 @@ hr {
   transform: scale(1.1);
   transition: transform 0.3s ease;
 }
-
-/* why aren't you working */
