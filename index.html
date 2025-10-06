@@ -4,19 +4,27 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>College Minecraft!</title>
+  <link rel="icon" type="image/png" href="images/logo_cmc.png">
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Quicksand:wght@400;600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
   <script src="./script.js" defer></script>
 </head>
 <body>
-  <a href="https://discord.gg/uTcbWtbPU6" class="discord-link">Our Discord</a> 
+  <!-- Announcement Banner -->
+  <div id="announcement-banner" class="announcement-banner">
+    <p>🎉 Welcome to CollegeMC! Join our community today!</p>
+  </div>
+  
+  <a href="https://discord.gg/uTcbWtbPU6" class="discord-link">Our Discord</a>
+  <div id="flower-counter" class="flower-counter">🌸 0</div>
+  <div id="click-counter" class="click-counter">Flowers Popped: 0 🎉</div>
   <div class="COLLEGE MC!">
     <main>
       <img src="images/logo_cmc.png" alt="College Minecraft Logo" class="logo">
       <p class="created-by">A place for college students to play Minecraft!</p>
       <div class="content-block">
-        <h2>What is CMC?</h2>
-        <p>CMC was designed for college students around the world to meet and enjoy Minecraft! Here's what you can do on CMC:</p>
+        <h2>What is <span class="rainbow-text">CMC</span>?</h2>
+        <p><span class="rainbow-text">CMC</span> was designed for college students around the world to meet and enjoy Minecraft! Here's what you can do on <span class="rainbow-text">CMC</span>:</p>
         <ol>
           <li>Meet other college students who love Minecraft</li>
           <li>Build amazing creations together</li>
@@ -26,7 +34,7 @@
       </div>
       <div class="meet-staff">
         <h3>Meet the Staff!</h3>
-        <p>Learn more about the people behind CollegeMC!</p>
+        <p>Learn more about the people behind <span class="rainbow-text">CollegeMC</span>!</p>
         <div class="staff-container">
           <div class="staff-member">
             <img src="images/king-skin.png" alt="King Staff Member">
@@ -34,9 +42,9 @@
             <p class="role">Owner</p>
             <div class="staff-info">
               <h4>Thomas</h4>
-              <p>i. Computer Engineering major</p>
-              <p>ii. Likes system administration</p>
-              <p>iii. Owns CollegeMC</p>
+              <p>I. Computer Engineering major</p>
+              <p>II. System administrator</p>
+              <p>III. Owns <span class="rainbow-text">CollegeMC</span>!</p>
             </div>
           </div>
           <div class="staff-member">
@@ -45,9 +53,9 @@
             <p class="role">Moderator</p>
             <div class="staff-info">
               <h4>Winnie</h4>
-              <p>i. Wants to be a botanist</p>
-              <p>ii. Gardener</p>
-              <p>iii. Muse of the server</p>
+              <p>I. Wants to be a botanist</p>
+              <p>II. Gardener</p>
+              <p>III. Muse of the server</p>
             </div>
           </div>
           <div class="staff-member">
@@ -56,13 +64,33 @@
             <p class="role">Admin</p>
             <div class="staff-info">
               <h4>Izak</h4>
-              <p>i. Computer Science student</p>
-              <p>ii. zzz</p>
-              <p>iii. CollegeMC designer</p>
+              <p>I. Computer Science student</p>
+              <p>II. zzz</p>
+              <p>III. <span class="rainbow-text">CollegeMC</span> designer</p>
             </div>
           </div>
         </div>
-      </div>    
+      </div>
+      
+      <div class="server-info">
+        <h3>Join Our Server!</h3>
+        <p>Connect to our Minecraft server</p>
+        <div class="server-address-container">
+          <code id="server-address" class="server-address">collegemc.com</code>
+          <button id="copy-button" class="copy-button">📋 Copy</button>
+        </div>
+        <p class="server-status">🟢 Server Status: <span id="status-text">Loading...</span></p>
+        <p class="player-count">👥 Players Online: <span id="player-count">...</span></p>
+      </div>
+      
+      <div class="discord-section">
+        <h3>Join Our Community!</h3>
+        <p>We don't bite!</p>
+        <a href="https://discord.gg/uTcbWtbPU6" class="discord-button" target="_blank">
+          Join the discord!
+        </a>
+      </div>
+      
       <div id="falling-leaves"></div>
     </main>
   </div>
