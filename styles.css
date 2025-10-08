@@ -5,6 +5,7 @@ body {
   background-attachment: fixed;
   margin: 0;
   padding-top: 40px; /* Space for announcement banner */
+  padding-bottom: 10px; /* Space for nav button */
   scroll-behavior: smooth;
 }
 
@@ -23,6 +24,7 @@ body {
   font-family: 'Quicksand', sans-serif;
   font-weight: 600;
   animation: slide-down 0.5s ease;
+  margin: 0;
 }
 
 @keyframes slide-down {
@@ -37,6 +39,161 @@ body {
 .announcement-banner p {
   margin: 0;
   font-size: 14px;
+}
+
+.announcement-link {
+  color: white;
+  text-decoration: underline;
+  font-weight: 700;
+  transition: opacity 0.2s ease;
+}
+
+.announcement-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Floating Menu */
+.floating-menu-container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  width: 400px;
+  height: 120px;
+  overflow: visible;
+}
+
+.menu-button {
+  background: rgba(255, 196, 209, 0.95);
+  color: #544c4a;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 20px 40px 20px;
+  border: 2px solid rgba(255, 182, 193, 0.8);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  user-select: none;
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15px;
+}
+
+.menu-button:hover {
+  background: rgba(255, 182, 193, 0.95);
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.menu-button:active {
+  transform: translateX(-50%) scale(0.98);
+}
+
+.menu-options {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.menu-option {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(255, 196, 209, 0.95);
+  color: #544c4a;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 15px;
+  border: 2px solid rgba(255, 182, 193, 0.8);
+  border-radius: 50%;
+  width: 75px;
+  height: 75px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  transition: left 0.3s ease, bottom 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.menu-option:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 10002;
+}
+
+/* Simple fade in animation - no movement */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Hidden state - collapsed at center behind menu button */
+.menu-options.hidden .menu-option {
+  left: 50%;
+  bottom: -40px;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+/* Final positions when menu is open */
+.menu-option:nth-child(1) {
+  /* Web Map - Left */
+  left: 15%;
+  bottom: 15px;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.menu-option:nth-child(2) {
+  /* Leaderboard Stats - Right */
+  left: 85%;
+  bottom: 15px;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+.menu-icon {
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-text {
+  font-size: 10px;
+  line-height: 1.1;
+  max-width: 65px;
 }
 
 .logo {
@@ -335,12 +492,6 @@ p {
 
 hr {
   display: none;
-}
-
-.discord-link {
-  font-family: 'Quicksand', sans-serif;
-  font-size: 12px;
-  color: #D3D3D3;
 }
 
 .flower-counter {

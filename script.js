@@ -12,6 +12,45 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.opacity = '1';
   }, 100);
 
+  // Floating Menu Toggle
+  const menuToggle = document.getElementById('menu-toggle');
+  const menuOptions = document.getElementById('menu-options');
+  
+  console.log('Menu Toggle Element:', menuToggle);
+  console.log('Menu Options Element:', menuOptions);
+  
+  if (menuToggle && menuOptions) {
+    let menuOpen = false;
+    
+    menuToggle.addEventListener('click', (e) => {
+      console.log('Menu button clicked!');
+      e.stopPropagation();
+      menuOpen = !menuOpen;
+      
+      if (menuOpen) {
+        menuOptions.classList.remove('hidden');
+        menuToggle.textContent = 'Close';
+        console.log('Menu opened');
+      } else {
+        menuOptions.classList.add('hidden');
+        menuToggle.textContent = 'Nav';
+        console.log('Menu closed');
+      }
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (menuOpen && !e.target.closest('.floating-menu-container')) {
+        menuOptions.classList.add('hidden');
+        menuToggle.textContent = 'Nav';
+        menuOpen = false;
+        console.log('Menu closed by outside click');
+      }
+    });
+  } else {
+    console.error('Menu elements not found!');
+  }
+
   // Copy server address functionality
   const copyButton = document.getElementById('copy-button');
   const serverAddressBox = document.getElementById('server-address');
