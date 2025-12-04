@@ -16,12 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.opacity = '1';
   }, 100);
 
-  // Ping testing function
+  // Ping testing function - pings the Minecraft server at ping.collegemc.com
   async function testPing() {
     try {
-      // Measure ping using fetch timing to the API
+      // Measure ping to Minecraft server by timing the query request
       const startTime = performance.now();
-      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com', {
+      const response = await fetch('https://api.mcsrvstat.us/3/ping.collegemc.com', {
         method: 'GET',
         cache: 'no-cache'
       });
