@@ -104,6 +104,50 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchServerStatus();
   setInterval(fetchServerStatus, 30000);
 
+  // Ping testing function
+  async function testPing() {
+    const pingValue = document.getElementById('ping-value');
+    if (!pingValue) return;
+
+    try {
+      // Measure ping using fetch timing to the API
+      const startTime = performance.now();
+      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com', {
+        method: 'GET',
+        cache: 'no-cache'
+      });
+      const endTime = performance.now();
+      
+      const ping = Math.round(endTime - startTime);
+      
+      if (response.ok) {
+        pingValue.textContent = ping;
+        
+        // Color code based on ping
+        if (ping < 50) {
+          pingValue.style.color = '#00aa00'; // Green for excellent
+        } else if (ping < 100) {
+          pingValue.style.color = '#90EE90'; // Light green for good
+        } else if (ping < 200) {
+          pingValue.style.color = '#FFA500'; // Orange for moderate
+        } else {
+          pingValue.style.color = '#ff0000'; // Red for high
+        }
+      } else {
+        pingValue.textContent = 'N/A';
+        pingValue.style.color = '#666';
+      }
+    } catch (error) {
+      console.error('Error testing ping:', error);
+      pingValue.textContent = 'N/A';
+      pingValue.style.color = '#666';
+    }
+  }
+
+  // Test ping on load and every 30 seconds
+  testPing();
+  setInterval(testPing, 30000);
+
   function updateFlowerCounter() {
     const counter = document.getElementById("flower-counter");
     if (counter) {

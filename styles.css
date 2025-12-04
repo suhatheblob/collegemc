@@ -665,6 +665,18 @@ hr {
   font-weight: bold;
 }
 
+.ping-info {
+  font-size: 14px;
+  margin-top: 5px;
+  font-weight: 600;
+  color: #544c4a;
+}
+
+#ping-value {
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
 .discord-section {
   background-color: #FFC4D1;
   text-align: center;
