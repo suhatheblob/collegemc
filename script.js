@@ -77,17 +77,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fetch server status and player count from api.mcsrvstat.us
   async function fetchServerStatus() {
+    const statusText = document.getElementById('status-text');
+    const playerCount = document.getElementById('player-count');
+    
+    if (!statusText || !playerCount) {
+      console.error('Status elements not found');
+      return;
+    }
+    
     try {
-      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com');
-      const data = await response.json();
+      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com', {
+        method: 'GET',
+        cache: 'no-cache'
+      });
       
-      const statusText = document.getElementById('status-text');
-      const playerCount = document.getElementById('player-count');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       if (data.online) {
         statusText.textContent = 'Online';
         statusText.style.color = '#00aa00';
-        playerCount.textContent = `${data.players.online} / ${data.players.max}`;
+        if (data.players && typeof data.players.online !== 'undefined' && typeof data.players.max !== 'undefined') {
+          playerCount.textContent = `${data.players.online} / ${data.players.max}`;
+        } else {
+          playerCount.textContent = 'N/A';
+        }
       } else {
         statusText.textContent = 'Offline';
         statusText.style.color = '#ff0000';
@@ -95,8 +112,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error('Error fetching server status:', error);
-      document.getElementById('status-text').textContent = 'Unknown';
-      document.getElementById('player-count').textContent = 'N/A';
+      if (statusText) {
+        statusText.textContent = 'Unknown';
+        statusText.style.color = '#666';
+      }
+      if (playerCount) {
+        playerCount.textContent = 'N/A';
+      }
     }
   }
 
@@ -104,49 +126,6 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchServerStatus();
   setInterval(fetchServerStatus, 30000);
 
-  // Ping testing function
-  async function testPing() {
-    const pingValue = document.getElementById('ping-value');
-    if (!pingValue) return;
-
-    try {
-      // Measure ping using fetch timing to the API
-      const startTime = performance.now();
-      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com', {
-        method: 'GET',
-        cache: 'no-cache'
-      });
-      const endTime = performance.now();
-      
-      const ping = Math.round(endTime - startTime);
-      
-      if (response.ok) {
-        pingValue.textContent = ping;
-        
-        // Color code based on ping
-        if (ping < 50) {
-          pingValue.style.color = '#00aa00'; // Green for excellent
-        } else if (ping < 100) {
-          pingValue.style.color = '#90EE90'; // Light green for good
-        } else if (ping < 200) {
-          pingValue.style.color = '#FFA500'; // Orange for moderate
-        } else {
-          pingValue.style.color = '#ff0000'; // Red for high
-        }
-      } else {
-        pingValue.textContent = 'N/A';
-        pingValue.style.color = '#666';
-      }
-    } catch (error) {
-      console.error('Error testing ping:', error);
-      pingValue.textContent = 'N/A';
-      pingValue.style.color = '#666';
-    }
-  }
-
-  // Test ping on load and every 2 seconds
-  testPing();
-  setInterval(testPing, 2000);
 
   function updateFlowerCounter() {
     const counter = document.getElementById("flower-counter");
