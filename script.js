@@ -144,9 +144,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Test ping on load and every 30 seconds
+  // Test ping on load and every 2 seconds
   testPing();
-  setInterval(testPing, 30000);
+  setInterval(testPing, 2000);
 
   function updateFlowerCounter() {
     const counter = document.getElementById("flower-counter");

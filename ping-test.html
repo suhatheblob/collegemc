@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ping Test - CollegeMC</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="images/logo_cmc.png">
+  
+  <!-- Stylesheets & Fonts -->
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Quicksand:wght@400;600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+  <script src="./ping-test.js" defer></script>
+  <style>
+    .ping-test-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .ping-test-card {
+      background-color: #FFC4D1;
+      text-align: center;
+      padding: 40px;
+      margin: 20px auto;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      font-family: 'Quicksand', sans-serif;
+      color: #333;
+      opacity: 0.9;
+      border: 2px dashed white;
+    }
+    
+    .ping-test-card h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #544c4a;
+    }
+    
+    .ping-display {
+      font-size: 72px;
+      font-weight: bold;
+      margin: 30px 0;
+      font-family: 'Courier New', monospace;
+      transition: color 0.3s ease;
+    }
+    
+    .ping-label {
+      font-size: 18px;
+      color: #544c4a;
+      margin-bottom: 10px;
+    }
+    
+    .ping-status {
+      font-size: 16px;
+      margin-top: 20px;
+      color: #666;
+    }
+    
+    .server-info-text {
+      font-size: 14px;
+      color: #666;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="ping-test-container">
+    <img src="images/logo_cmc.png" alt="College Minecraft Logo" class="logo">
+    <div class="ping-test-card">
+      <h1>📡 Ping Test</h1>
+      <p class="ping-label">Server: collegemc.com</p>
+      <div class="ping-display" id="ping-display">--</div>
+      <p class="ping-status" id="ping-status">Testing connection...</p>
+      <p class="server-info-text">Updates every 0.5 seconds</p>
+    </div>
+  </div>
+</body>
+</html>
+
