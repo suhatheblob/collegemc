@@ -9,6 +9,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 100);
 
   let lastApiData = null;
+  let rateLimitBackoff = 0; // Backoff time in milliseconds
+  let pingBackoff = 0; // Backoff time for ping
+  let consecutiveErrors = 0;
 
   // Toggle raw data display
   const toggleButton = document.getElementById('toggle-raw');
@@ -39,6 +42,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fetch server status and player count from api.mcsrvstat.us
   async function fetchServerStatus() {
+    // Check if we're in backoff period
+    if (rateLimitBackoff > Date.now()) {
+      const remaining = Math.ceil((rateLimitBackoff - Date.now()) / 1000);
+      const apiStatus = document.getElementById('api-status');
+      if (apiStatus) {
+        apiStatus.textContent = `Rate Limited (${remaining}s)`;
+        apiStatus.style.color = '#FFA500';
+      }
+      return;
+    }
+
     const statusText = document.getElementById('status-text');
     const playerCount = document.getElementById('player-count');
     const serverIp = document.getElementById('server-ip');
@@ -68,9 +82,29 @@ document.addEventListener("DOMContentLoaded", () => {
         apiResponseTime.textContent = responseTime;
       }
       
+      // Handle rate limiting (429)
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const backoffTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000; // Default 60 seconds
+        rateLimitBackoff = Date.now() + backoffTime;
+        consecutiveErrors++;
+        
+        if (apiStatus) {
+          apiStatus.textContent = `Rate Limited (${Math.ceil(backoffTime / 1000)}s)`;
+          apiStatus.style.color = '#FFA500';
+        }
+        
+        console.warn('Rate limited. Backing off for', backoffTime / 1000, 'seconds');
+        return;
+      }
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      // Reset error counters on success
+      consecutiveErrors = 0;
+      rateLimitBackoff = 0;
       
       const data = await response.json();
       lastApiData = data;
@@ -159,9 +193,25 @@ document.addEventListener("DOMContentLoaded", () => {
       updateTimestamp();
     } catch (error) {
       console.error('Error fetching server status:', error);
+      consecutiveErrors++;
+      
+      // Implement exponential backoff on consecutive errors
+      if (consecutiveErrors > 3) {
+        const backoffTime = Math.min(60000 * Math.pow(2, consecutiveErrors - 3), 300000); // Max 5 minutes
+        rateLimitBackoff = Date.now() + backoffTime;
+      }
+      
+      let errorMessage = 'Error';
+      if (error.message && error.message.includes('429')) {
+        errorMessage = 'Rate Limited';
+      } else if (error.message && error.message.includes('CORS')) {
+        errorMessage = 'CORS Error';
+      } else if (error.message && error.message.includes('NetworkError')) {
+        errorMessage = 'Network Error';
+      }
       
       if (apiStatus) {
-        apiStatus.textContent = 'Error';
+        apiStatus.textContent = errorMessage;
         apiStatus.style.color = '#ff0000';
       }
       
@@ -188,6 +238,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Ping testing function
   async function testPing() {
+    // Check if we're in backoff period
+    if (pingBackoff > Date.now()) {
+      return; // Skip this ping attempt
+    }
+
     const pingValue = document.getElementById('ping-value');
     if (!pingValue) return;
 
@@ -202,8 +257,20 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const ping = Math.round(endTime - startTime);
       
+      // Handle rate limiting (429)
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const backoffTime = retryAfter ? parseInt(retryAfter) * 1000 : 30000; // Default 30 seconds
+        pingBackoff = Date.now() + backoffTime;
+        pingValue.textContent = 'Rate Limited';
+        pingValue.style.color = '#FFA500';
+        console.warn('Ping rate limited. Backing off for', backoffTime / 1000, 'seconds');
+        return;
+      }
+      
       if (response.ok) {
         pingValue.textContent = ping;
+        pingBackoff = 0; // Reset backoff on success
         
         // Color code based on ping
         if (ping < 50) {
@@ -220,7 +287,16 @@ document.addEventListener("DOMContentLoaded", () => {
         pingValue.style.color = '#666';
       }
     } catch (error) {
-      console.error('Error testing ping:', error);
+      // Only log CORS/network errors occasionally to avoid spam
+      if (Math.random() < 0.1) { // Log 10% of errors
+        console.error('Error testing ping:', error);
+      }
+      
+      // Set backoff on network errors
+      if (error.message && (error.message.includes('CORS') || error.message.includes('NetworkError'))) {
+        pingBackoff = Date.now() + 10000; // 10 second backoff for network errors
+      }
+      
       pingValue.textContent = 'N/A';
       pingValue.style.color = '#666';
     }
@@ -230,8 +306,8 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchServerStatus();
   setInterval(fetchServerStatus, 30000);
 
-  // Test ping on load and every 2 seconds
+  // Test ping on load and every 5 seconds (reduced frequency to avoid rate limiting)
   testPing();
-  setInterval(testPing, 2000);
+  setInterval(testPing, 5000);
 });
 
