@@ -1,16 +1,18 @@
 console.log("script.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
-  const MAX_LEAVES = 100;
+  const MAX_LEAVES = 100; // Maximum number of leaves allowed at once
   let currentLeafCount = 0;
   let totalFlowersClicked = 0;
 
+  // Smooth fade-in animation on page load
   document.body.style.opacity = '0';
   setTimeout(() => {
     document.body.style.transition = 'opacity 0.8s ease-in';
     document.body.style.opacity = '1';
   }, 100);
 
+  // Floating Menu Toggle
   const menuToggle = document.getElementById('menu-toggle');
   const menuOptions = document.getElementById('menu-options');
   
@@ -36,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     
+    // Close menu when clicking outside
     document.addEventListener('click', (e) => {
       if (menuOpen && !e.target.closest('.floating-menu-container')) {
         menuOptions.classList.add('hidden');
@@ -48,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error('Menu elements not found!');
   }
 
+  // Copy server address functionality
   const copyButton = document.getElementById('copy-button');
   const serverAddressBox = document.getElementById('server-address');
   
@@ -71,217 +75,57 @@ document.addEventListener("DOMContentLoaded", () => {
     serverAddressBox.addEventListener('click', copyServerAddress);
   }
 
-  function writeVarInt(value) {
-    const bytes = [];
-    while (true) {
-      if ((value & 0xFFFFFF80) === 0) {
-        bytes.push(value);
-        return new Uint8Array(bytes);
-      }
-      bytes.push((value & 0x7F) | 0x80);
-      value = value >>> 7;
-    }
-  }
-  
-  function readVarInt(dataView, offset) {
-    let value = 0;
-    let pos = offset;
-    let shift = 0;
-    while (true) {
-      const byte = dataView.getUint8(pos);
-      value |= (byte & 0x7F) << shift;
-      pos++;
-      if ((byte & 0x80) === 0) break;
-      shift += 7;
-      if (shift >= 32) throw new Error('VarInt too large');
-    }
-    return { value, length: pos - offset };
-  }
-  
-  function writeString(str) {
-    const encoder = new TextEncoder();
-    const encoded = encoder.encode(str);
-    const lengthBytes = writeVarInt(encoded.length);
-    const result = new Uint8Array(lengthBytes.length + encoded.length);
-    result.set(lengthBytes, 0);
-    result.set(encoded, lengthBytes.length);
-    return result;
-  }
-  
-  function readString(dataView, offset) {
-    const lengthResult = readVarInt(dataView, offset);
-    const length = lengthResult.value;
-    const stringOffset = offset + lengthResult.length;
-    const bytes = new Uint8Array(dataView.buffer, stringOffset, length);
-    const decoder = new TextDecoder();
-    return { value: decoder.decode(bytes), length: lengthResult.length + length };
-  }
-  
-  function createHandshakePacket(host, port, protocolVersion = 47) {
-    const packetId = writeVarInt(0x00);
-    const protocol = writeVarInt(protocolVersion);
-    const address = writeString(host);
-    const portBytes = new Uint8Array(2);
-    new DataView(portBytes.buffer).setUint16(0, port, false);
-    const nextState = writeVarInt(1);
-    
-    const totalLength = packetId.length + protocol.length + address.length + portBytes.length + nextState.length;
-    const lengthBytes = writeVarInt(totalLength);
-    
-    const result = new Uint8Array(lengthBytes.length + totalLength);
-    let offset = 0;
-    result.set(lengthBytes, offset); offset += lengthBytes.length;
-    result.set(packetId, offset); offset += packetId.length;
-    result.set(protocol, offset); offset += protocol.length;
-    result.set(address, offset); offset += address.length;
-    result.set(portBytes, offset); offset += portBytes.length;
-    result.set(nextState, offset);
-    
-    return result;
-  }
-  
-  function createStatusRequestPacket() {
-    const packetId = writeVarInt(0x00);
-    const lengthBytes = writeVarInt(packetId.length);
-    const result = new Uint8Array(lengthBytes.length + packetId.length);
-    result.set(lengthBytes, 0);
-    result.set(packetId, lengthBytes.length);
-    return result;
-  }
-  
-  function parseStatusResponse(buffer) {
-    const view = new DataView(buffer);
-    let offset = 0;
-    
-    const lengthResult = readVarInt(view, offset);
-    offset += lengthResult.length;
-    
-    const packetIdResult = readVarInt(view, offset);
-    offset += packetIdResult.length;
-    
-    const jsonLengthResult = readVarInt(view, offset);
-    offset += jsonLengthResult.length;
-    
-    const jsonString = readString(view, offset);
-    const statusData = JSON.parse(jsonString.value);
-    
-    return {
-      online: true,
-      players: {
-        online: statusData.players?.online || 0,
-        max: statusData.players?.max || 0
-      }
-    };
-  }
-  
-  async function pingMinecraftServer(host, port = 25565) {
-    return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-      const serverHost = host.split(':')[0];
-      const serverPort = host.includes(':') ? parseInt(host.split(':')[1]) : port;
-      
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const proxyUrl = `${protocol}//${window.location.hostname}:${window.location.port || (protocol === 'https:' ? 443 : 80)}/api/mc-ping?host=${encodeURIComponent(serverHost)}&port=${serverPort}`;
-      
-      const ws = new WebSocket(proxyUrl);
-      let timeout;
-      ws.binaryType = 'arraybuffer';
-      
-      ws.onopen = () => {
-        const handshake = createHandshakePacket(serverHost, serverPort);
-        ws.send(handshake);
-        
-        const statusRequest = createStatusRequestPacket();
-        ws.send(statusRequest);
-      };
-      
-      ws.onmessage = (event) => {
-        try {
-          if (event.data instanceof ArrayBuffer) {
-            const response = parseStatusResponse(event.data);
-            const latency = Date.now() - startTime;
-            
-            clearTimeout(timeout);
-            ws.close();
-            
-            resolve({
-              online: true,
-              latency: latency,
-              players: response.players
-            });
-          } else {
-            const data = JSON.parse(event.data);
-            const latency = Date.now() - startTime;
-            
-            clearTimeout(timeout);
-            ws.close();
-            
-            resolve({
-              online: true,
-              latency: latency,
-              players: {
-                online: data.players?.online || 0,
-                max: data.players?.max || 0
-              }
-            });
-          }
-        } catch (e) {
-          clearTimeout(timeout);
-          ws.close();
-          reject(new Error('Failed to parse server response: ' + e.message));
-        }
-      };
-      
-      ws.onerror = (error) => {
-        clearTimeout(timeout);
-        ws.close();
-        reject(new Error('WebSocket proxy not available. A WebSocket-to-TCP proxy is required for browser-based Server List Ping.'));
-      };
-      
-      timeout = setTimeout(() => {
-        if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
-        reject(new Error('Connection timeout'));
-      }, 5000);
-    });
-  }
-
+  // Fetch server status and player count from api.mcsrvstat.us
   async function fetchServerStatus() {
+    const statusText = document.getElementById('status-text');
+    const playerCount = document.getElementById('player-count');
+    
+    if (!statusText || !playerCount) {
+      console.error('Status elements not found');
+      return;
+    }
+    
     try {
-      const serverAddress = document.getElementById('server-address').textContent;
-      const statusText = document.getElementById('status-text');
-      const playerCount = document.getElementById('player-count');
+      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com', {
+        method: 'GET',
+        cache: 'no-cache'
+      });
       
-      statusText.textContent = 'Checking...';
-      statusText.style.color = '#ffaa00';
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       
-      const data = await pingMinecraftServer(serverAddress);
+      const data = await response.json();
       
       if (data.online) {
         statusText.textContent = 'Online';
         statusText.style.color = '#00aa00';
-        playerCount.textContent = `${data.players.online} / ${data.players.max}`;
+        if (data.players && typeof data.players.online !== 'undefined' && typeof data.players.max !== 'undefined') {
+          playerCount.textContent = `${data.players.online} / ${data.players.max}`;
+        } else {
+          playerCount.textContent = 'N/A';
+        }
       } else {
         statusText.textContent = 'Offline';
         statusText.style.color = '#ff0000';
         playerCount.textContent = '0 / 0';
       }
     } catch (error) {
-      console.error('Error pinging server:', error);
-      const statusText = document.getElementById('status-text');
-      const playerCount = document.getElementById('player-count');
-      
-      statusText.textContent = 'Error';
-      statusText.style.color = '#ff0000';
-      playerCount.textContent = 'N/A';
-      
-      console.warn('Direct client ping requires a WebSocket-to-TCP proxy. Browsers cannot make raw TCP connections.');
+      console.error('Error fetching server status:', error);
+      if (statusText) {
+        statusText.textContent = 'Unknown';
+        statusText.style.color = '#666';
+      }
+      if (playerCount) {
+        playerCount.textContent = 'N/A';
+      }
     }
   }
 
+  // Fetch server status on load and every 30 seconds
   fetchServerStatus();
   setInterval(fetchServerStatus, 30000);
+
 
   function updateFlowerCounter() {
     const counter = document.getElementById("flower-counter");
@@ -295,6 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clickCounter) {
       clickCounter.textContent = `Flowers Popped: ${totalFlowersClicked} 🎉`;
       
+      // Special messages at milestones
       if (totalFlowersClicked === 10) {
         showMilestone("Nice! 10 flowers! 🌸");
       } else if (totalFlowersClicked === 50) {
@@ -334,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createLeaf() {
+    // Check if we've reached the maximum number of leaves
     if (currentLeafCount >= MAX_LEAVES) {
       console.log("Max leaves reached, skipping creation");
       return;
@@ -359,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
       explodeWithNumber(leaf, totalFlowersClicked);
     });
 
+    // Remove leaf when animation ends (naturally falls off screen)
     leaf.addEventListener("animationend", function () {
       leaf.remove();
       currentLeafCount--;
@@ -372,6 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const leafRect = leaf.getBoundingClientRect();
 
+    // Create the pop number with yellow hue
     const popNumber = document.createElement("div");
     popNumber.className = "pop-number";
     popNumber.textContent = `+${clickNumber}`;
@@ -389,10 +237,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     document.body.appendChild(popNumber);
 
+    // Remove the number after animation
     setTimeout(() => {
       popNumber.remove();
     }, 1000);
 
+    // Remove the leaf immediately
     leaf.remove();
     currentLeafCount--;
     updateFlowerCounter();
@@ -408,39 +258,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const leafRect = leaf.getBoundingClientRect();
     console.log("Leaf position:", leafRect);
 
+    // Position the particle container at the center of the leaf
     particleContainer.style.left = `${leafRect.left + leafRect.width / 2}px`;
     particleContainer.style.top = `${leafRect.top + leafRect.height / 2}px`;
 
     const leafContainer = document.getElementById("falling-leaves");
     leafContainer.appendChild(particleContainer);
 
+    // Create and animate particles
     for (let i = 0; i < 20; i++) {
       const particle = document.createElement("div");
       particle.className = "particle";
-      particle.style.left = `${Math.random() * 40 - 20}px`;
-      particle.style.top = `${Math.random() * 40 - 20}px`;
+      particle.style.left = `${Math.random() * 40 - 20}px`;  // Random horizontal movement
+      particle.style.top = `${Math.random() * 40 - 20}px`;   // Random vertical movement
       particle.style.backgroundColor = "pink";
       particleContainer.appendChild(particle);
 
+      // Remove particles after 1 second (animation duration)
       setTimeout(() => {
         console.log(`Removing particle ${i + 1}`);
         particle.remove();
       }, 1000);
     }
 
+    // Delay the removal of the leaf to ensure particles are visible
     setTimeout(() => {
       leaf.remove();
       currentLeafCount--;
       updateFlowerCounter();
       console.log(`Leaf removed after explosion. Current count: ${currentLeafCount}`);
-    }, 1000);
+    }, 1000); // Wait 1 second before removing the leaf
 
+    // Remove the particle container after particles are done
     setTimeout(() => particleContainer.remove(), 1000);
   }
 
+  // Create initial 10 leaves
   for (let i = 0; i < 10; i++) {
     createLeaf();
   }
 
-  setInterval(createLeaf, 1500);
+  setInterval(createLeaf, 1500); // Create leaves every 1.5 seconds
 });
