@@ -75,10 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ⚠️ IMPORTANT: The API server must be started manually on the Minecraft server
   // using the command: /serverapi start
   // The API server is disabled by default and will NOT auto-start.
-  // Using CORS proxy to work around mixed content (HTTPS site can't load HTTP resources)
-  // The proxy forwards HTTPS requests to the HTTP API endpoint
-  const API_SERVER = 'http://104.204.222.149:8000';
-  const API_BASE_URL = `https://corsproxy.io/?${API_SERVER}`;
+  // Using Bloom.host reverse proxy for HTTPS access
+  const API_BASE_URL = 'https://api.collegemc.com';
 
   // Fetch server status from the Server Status API
   async function fetchServerStatus() {
