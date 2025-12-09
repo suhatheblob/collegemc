@@ -71,215 +71,67 @@ document.addEventListener("DOMContentLoaded", () => {
     serverAddressBox.addEventListener('click', copyServerAddress);
   }
 
-  function writeVarInt(value) {
-    const bytes = [];
-    while (true) {
-      if ((value & 0xFFFFFF80) === 0) {
-        bytes.push(value);
-        return new Uint8Array(bytes);
-      }
-      bytes.push((value & 0x7F) | 0x80);
-      value = value >>> 7;
-    }
-  }
-  
-  function readVarInt(dataView, offset) {
-    let value = 0;
-    let pos = offset;
-    let shift = 0;
-    while (true) {
-      const byte = dataView.getUint8(pos);
-      value |= (byte & 0x7F) << shift;
-      pos++;
-      if ((byte & 0x80) === 0) break;
-      shift += 7;
-      if (shift >= 32) throw new Error('VarInt too large');
-    }
-    return { value, length: pos - offset };
-  }
-  
-  function writeString(str) {
-    const encoder = new TextEncoder();
-    const encoded = encoder.encode(str);
-    const lengthBytes = writeVarInt(encoded.length);
-    const result = new Uint8Array(lengthBytes.length + encoded.length);
-    result.set(lengthBytes, 0);
-    result.set(encoded, lengthBytes.length);
-    return result;
-  }
-  
-  function readString(dataView, offset) {
-    const lengthResult = readVarInt(dataView, offset);
-    const length = lengthResult.value;
-    const stringOffset = offset + lengthResult.length;
-    const bytes = new Uint8Array(dataView.buffer, stringOffset, length);
-    const decoder = new TextDecoder();
-    return { value: decoder.decode(bytes), length: lengthResult.length + length };
-  }
-  
-  function createHandshakePacket(host, port, protocolVersion = 47) {
-    const packetId = writeVarInt(0x00);
-    const protocol = writeVarInt(protocolVersion);
-    const address = writeString(host);
-    const portBytes = new Uint8Array(2);
-    new DataView(portBytes.buffer).setUint16(0, port, false);
-    const nextState = writeVarInt(1);
-    
-    const totalLength = packetId.length + protocol.length + address.length + portBytes.length + nextState.length;
-    const lengthBytes = writeVarInt(totalLength);
-    
-    const result = new Uint8Array(lengthBytes.length + totalLength);
-    let offset = 0;
-    result.set(lengthBytes, offset); offset += lengthBytes.length;
-    result.set(packetId, offset); offset += packetId.length;
-    result.set(protocol, offset); offset += protocol.length;
-    result.set(address, offset); offset += address.length;
-    result.set(portBytes, offset); offset += portBytes.length;
-    result.set(nextState, offset);
-    
-    return result;
-  }
-  
-  function createStatusRequestPacket() {
-    const packetId = writeVarInt(0x00);
-    const lengthBytes = writeVarInt(packetId.length);
-    const result = new Uint8Array(lengthBytes.length + packetId.length);
-    result.set(lengthBytes, 0);
-    result.set(packetId, lengthBytes.length);
-    return result;
-  }
-  
-  function parseStatusResponse(buffer) {
-    const view = new DataView(buffer);
-    let offset = 0;
-    
-    const lengthResult = readVarInt(view, offset);
-    offset += lengthResult.length;
-    
-    const packetIdResult = readVarInt(view, offset);
-    offset += packetIdResult.length;
-    
-    const jsonLengthResult = readVarInt(view, offset);
-    offset += jsonLengthResult.length;
-    
-    const jsonString = readString(view, offset);
-    const statusData = JSON.parse(jsonString.value);
-    
-    return {
-      online: true,
-      players: {
-        online: statusData.players?.online || 0,
-        max: statusData.players?.max || 0
-      }
-    };
-  }
-  
-  async function pingMinecraftServer(host, port = 25565) {
-    return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-      const serverHost = host.split(':')[0];
-      const serverPort = host.includes(':') ? parseInt(host.split(':')[1]) : port;
-      
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const proxyUrl = `${protocol}//${window.location.hostname}:${window.location.port || (protocol === 'https:' ? 443 : 80)}/api/mc-ping?host=${encodeURIComponent(serverHost)}&port=${serverPort}`;
-      
-      const ws = new WebSocket(proxyUrl);
-      let timeout;
-      ws.binaryType = 'arraybuffer';
-      
-      ws.onopen = () => {
-        const handshake = createHandshakePacket(serverHost, serverPort);
-        ws.send(handshake);
-        
-        const statusRequest = createStatusRequestPacket();
-        ws.send(statusRequest);
-      };
-      
-      ws.onmessage = (event) => {
-        try {
-          if (event.data instanceof ArrayBuffer) {
-            const response = parseStatusResponse(event.data);
-            const latency = Date.now() - startTime;
-            
-            clearTimeout(timeout);
-            ws.close();
-            
-            resolve({
-              online: true,
-              latency: latency,
-              players: response.players
-            });
-          } else {
-            const data = JSON.parse(event.data);
-            const latency = Date.now() - startTime;
-            
-            clearTimeout(timeout);
-            ws.close();
-            
-            resolve({
-              online: true,
-              latency: latency,
-              players: {
-                online: data.players?.online || 0,
-                max: data.players?.max || 0
-              }
-            });
-          }
-        } catch (e) {
-          clearTimeout(timeout);
-          ws.close();
-          reject(new Error('Failed to parse server response: ' + e.message));
-        }
-      };
-      
-      ws.onerror = (error) => {
-        clearTimeout(timeout);
-        ws.close();
-        reject(new Error('WebSocket proxy not available. A WebSocket-to-TCP proxy is required for browser-based Server List Ping.'));
-      };
-      
-      timeout = setTimeout(() => {
-        if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
-        reject(new Error('Connection timeout'));
-      }, 5000);
-    });
-  }
+  // API Configuration
+  // ⚠️ IMPORTANT: The API server must be started manually on the Minecraft server
+  // using the command: /serverapi start
+  // The API server is disabled by default and will NOT auto-start.
+  const API_BASE_URL = 'http://104.204.222.149:8000';
 
+  // Fetch server status from the Server Status API
   async function fetchServerStatus() {
+    const statusText = document.getElementById('status-text');
+    const playerCount = document.getElementById('player-count');
+    
+    if (!statusText || !playerCount) {
+      console.error('Status elements not found');
+      return;
+    }
+    
     try {
-      const serverAddress = document.getElementById('server-address').textContent;
-      const statusText = document.getElementById('status-text');
-      const playerCount = document.getElementById('player-count');
-      
       statusText.textContent = 'Checking...';
       statusText.style.color = '#ffaa00';
       
-      const data = await pingMinecraftServer(serverAddress);
+      const response = await fetch(`${API_BASE_URL}/api`, {
+        method: 'GET',
+        cache: 'no-cache'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       if (data.online) {
         statusText.textContent = 'Online';
         statusText.style.color = '#00aa00';
-        playerCount.textContent = `${data.players.online} / ${data.players.max}`;
+        
+        if (data.playerCountDisplay) {
+          playerCount.textContent = data.playerCountDisplay;
+        } else if (data.playerCount !== undefined && data.maxPlayers !== undefined) {
+          playerCount.textContent = `${data.playerCount} / ${data.maxPlayers}`;
+        } else {
+          playerCount.textContent = 'N/A';
+        }
       } else {
         statusText.textContent = 'Offline';
         statusText.style.color = '#ff0000';
         playerCount.textContent = '0 / 0';
       }
     } catch (error) {
-      console.error('Error pinging server:', error);
-      const statusText = document.getElementById('status-text');
-      const playerCount = document.getElementById('player-count');
+      console.error('Error fetching server status:', error);
       
-      statusText.textContent = 'Error';
-      statusText.style.color = '#ff0000';
-      playerCount.textContent = 'N/A';
-      
-      console.warn('Direct client ping requires a WebSocket-to-TCP proxy. Browsers cannot make raw TCP connections.');
+      if (statusText) {
+        statusText.textContent = 'Unknown';
+        statusText.style.color = '#666';
+      }
+      if (playerCount) {
+        playerCount.textContent = 'N/A';
+      }
     }
   }
 
+  // Fetch server status on load and every 30 seconds
   fetchServerStatus();
   setInterval(fetchServerStatus, 30000);
 

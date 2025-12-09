@@ -28,7 +28,7 @@
       padding: 40px;
       margin: 20px auto;
       width: 90%;
-      max-width: 600px;
+      max-width: 800px;
       border-radius: 15px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       font-family: 'Quicksand', sans-serif;
@@ -48,33 +48,27 @@
       padding: 20px;
       background-color: rgba(255, 255, 255, 0.3);
       border-radius: 10px;
+      text-align: left;
     }
     
     .debug-section h2 {
       font-size: 24px;
       margin-bottom: 15px;
       color: #544c4a;
+      text-align: center;
     }
     
     .debug-info {
-      font-size: 18px;
-      margin: 10px 0;
+      font-size: 16px;
+      margin: 8px 0;
       color: #544c4a;
     }
     
     .debug-value {
       font-weight: bold;
       font-family: 'Courier New', monospace;
-      font-size: 20px;
+      font-size: 18px;
       margin-left: 10px;
-      transition: color 0.3s ease;
-    }
-    
-    .ping-display {
-      font-size: 48px;
-      font-weight: bold;
-      margin: 15px 0;
-      font-family: 'Courier New', monospace;
       transition: color 0.3s ease;
     }
     
@@ -83,6 +77,7 @@
       color: #666;
       margin-top: 20px;
       font-style: italic;
+      text-align: center;
     }
     
     .toggle-button {
@@ -112,7 +107,7 @@
       text-align: left;
       font-family: 'Courier New', monospace;
       font-size: 12px;
-      max-height: 300px;
+      max-height: 400px;
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-all;
@@ -121,6 +116,41 @@
     
     .raw-data.hidden {
       display: none;
+    }
+    
+    .player-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+    }
+    
+    .player-item {
+      padding: 8px;
+      margin: 5px 0;
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    
+    .tps-indicator {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .tps-excellent {
+      color: #00aa00;
+    }
+    
+    .tps-good {
+      color: #90EE90;
+    }
+    
+    .tps-moderate {
+      color: #FFA500;
+    }
+    
+    .tps-poor {
+      color: #ff0000;
     }
   </style>
 </head>
@@ -133,44 +163,50 @@
       <div class="debug-section">
         <h2>Server Status</h2>
         <p class="debug-info">
-          🟢 Status: <span class="debug-value" id="status-text">Loading...</span>
+          Status: <span class="debug-value" id="status-text">Loading...</span>
         </p>
         <p class="debug-info">
-          👥 Players: <span class="debug-value" id="player-count">...</span>
+          Players: <span class="debug-value" id="player-count">...</span>
         </p>
         <p class="debug-info">
-          📡 Ping: <span class="ping-display" id="ping-value">--</span> ms
+          TPS: <span class="debug-value tps-indicator" id="tps-value">--</span>
+        </p>
+        <p class="debug-info">
+          Uptime: <span class="debug-value" id="uptime-value">--</span>
         </p>
       </div>
       
       <div class="debug-section">
         <h2>Server Information</h2>
         <p class="debug-info">
-          Server: <span class="debug-value">collegemc.com</span>
-        </p>
-        <p class="debug-info">
-          Ping Target: <span class="debug-value">ping.collegemc.com</span>
-        </p>
-        <p class="debug-info">
-          IP Address: <span class="debug-value" id="server-ip">--</span>
-        </p>
-        <p class="debug-info">
-          Port: <span class="debug-value" id="server-port">--</span>
+          Server Name: <span class="debug-value" id="server-name">--</span>
         </p>
         <p class="debug-info">
           Version: <span class="debug-value" id="server-version">--</span>
         </p>
         <p class="debug-info">
-          Protocol: <span class="debug-value" id="server-protocol">--</span>
-        </p>
-        <p class="debug-info">
-          Software: <span class="debug-value" id="server-software">--</span>
+          MOTD: <span class="debug-value" id="server-motd" style="font-size: 14px;">--</span>
         </p>
       </div>
       
       <div class="debug-section">
-        <h2>Server MOTD</h2>
-        <p class="debug-info" id="server-motd" style="font-size: 14px; word-break: break-word;">--</p>
+        <h2>World Information</h2>
+        <p class="debug-info">
+          Time of Day: <span class="debug-value" id="world-time">--</span>
+        </p>
+        <p class="debug-info">
+          Weather: <span class="debug-value" id="world-weather">--</span>
+        </p>
+        <p class="debug-info">
+          Difficulty: <span class="debug-value" id="world-difficulty">--</span>
+        </p>
+      </div>
+      
+      <div class="debug-section">
+        <h2>Online Players</h2>
+        <ul class="player-list" id="player-list">
+          <li class="player-item">Loading...</li>
+        </ul>
       </div>
       
       <div class="debug-section">
@@ -184,6 +220,9 @@
         <p class="debug-info">
           API Status: <span class="debug-value" id="api-status">--</span>
         </p>
+        <p class="debug-info">
+          API Endpoint: <span class="debug-value" id="api-endpoint">--</span>
+        </p>
       </div>
       
       <div class="debug-section">
@@ -192,9 +231,8 @@
         <pre id="raw-data" class="raw-data hidden"></pre>
       </div>
       
-      <p class="update-info">Status updates every 30 seconds | Ping updates every 5 seconds</p>
+      <p class="update-info">Updates every 5 seconds</p>
     </div>
   </div>
 </body>
 </html>
-

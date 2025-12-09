@@ -8,10 +8,20 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.opacity = '1';
   }, 100);
 
+  // API Configuration
+  // ⚠️ IMPORTANT: The API server must be started manually on the Minecraft server
+  // using the command: /serverapi start
+  // The API server is disabled by default and will NOT auto-start.
+  const API_BASE_URL = 'http://104.204.222.149:8000';
+
   let lastApiData = null;
-  let rateLimitBackoff = 0; // Backoff time in milliseconds
-  let pingBackoff = 0; // Backoff time for ping
   let consecutiveErrors = 0;
+
+  // Update API endpoint display
+  const apiEndpoint = document.getElementById('api-endpoint');
+  if (apiEndpoint) {
+    apiEndpoint.textContent = `${API_BASE_URL}/api`;
+  }
 
   // Toggle raw data display
   const toggleButton = document.getElementById('toggle-raw');
@@ -40,27 +50,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Fetch server status and player count from api.mcsrvstat.us
-  async function fetchServerStatus() {
-    // Check if we're in backoff period
-    if (rateLimitBackoff > Date.now()) {
-      const remaining = Math.ceil((rateLimitBackoff - Date.now()) / 1000);
-      const apiStatus = document.getElementById('api-status');
-      if (apiStatus) {
-        apiStatus.textContent = `Rate Limited (${remaining}s)`;
-        apiStatus.style.color = '#FFA500';
-      }
+  // Format TPS with color coding
+  function formatTPS(tps) {
+    const tpsElement = document.getElementById('tps-value');
+    if (!tpsElement) return;
+    
+    tpsElement.textContent = tps.toFixed(2);
+    
+    // Remove all TPS classes
+    tpsElement.classList.remove('tps-excellent', 'tps-good', 'tps-moderate', 'tps-poor');
+    
+    // Add appropriate class based on TPS
+    if (tps >= 20.0) {
+      tpsElement.classList.add('tps-excellent');
+    } else if (tps >= 15.0) {
+      tpsElement.classList.add('tps-good');
+    } else if (tps >= 10.0) {
+      tpsElement.classList.add('tps-moderate');
+    } else {
+      tpsElement.classList.add('tps-poor');
+    }
+  }
+
+  // Update player list
+  function updatePlayerList(players) {
+    const playerList = document.getElementById('player-list');
+    if (!playerList) return;
+
+    if (!players || players.length === 0) {
+      playerList.innerHTML = '<li class="player-item">No players online</li>';
       return;
     }
 
+    playerList.innerHTML = players.map(player => {
+      const latency = player.latency || 'N/A';
+      return `<li class="player-item">${player.name} (${latency}ms)</li>`;
+    }).join('');
+  }
+
+  // Fetch server status from the Server Status API
+  async function fetchServerStatus() {
     const statusText = document.getElementById('status-text');
     const playerCount = document.getElementById('player-count');
-    const serverIp = document.getElementById('server-ip');
-    const serverPort = document.getElementById('server-port');
+    const serverName = document.getElementById('server-name');
     const serverVersion = document.getElementById('server-version');
-    const serverProtocol = document.getElementById('server-protocol');
-    const serverSoftware = document.getElementById('server-software');
     const serverMotd = document.getElementById('server-motd');
+    const uptimeValue = document.getElementById('uptime-value');
+    const worldTime = document.getElementById('world-time');
+    const worldWeather = document.getElementById('world-weather');
+    const worldDifficulty = document.getElementById('world-difficulty');
     const apiResponseTime = document.getElementById('api-response-time');
     const apiStatus = document.getElementById('api-status');
     
@@ -71,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     try {
       const startTime = performance.now();
-      const response = await fetch('https://api.mcsrvstat.us/3/collegemc.com', {
+      const response = await fetch(`${API_BASE_URL}/api`, {
         method: 'GET',
         cache: 'no-cache'
       });
@@ -82,29 +120,12 @@ document.addEventListener("DOMContentLoaded", () => {
         apiResponseTime.textContent = responseTime;
       }
       
-      // Handle rate limiting (429)
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        const backoffTime = retryAfter ? parseInt(retryAfter) * 1000 : 60000; // Default 60 seconds
-        rateLimitBackoff = Date.now() + backoffTime;
-        consecutiveErrors++;
-        
-        if (apiStatus) {
-          apiStatus.textContent = `Rate Limited (${Math.ceil(backoffTime / 1000)}s)`;
-          apiStatus.style.color = '#FFA500';
-        }
-        
-        console.warn('Rate limited. Backing off for', backoffTime / 1000, 'seconds');
-        return;
-      }
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Reset error counters on success
+      // Reset error counter on success
       consecutiveErrors = 0;
-      rateLimitBackoff = 0;
       
       const data = await response.json();
       lastApiData = data;
@@ -119,75 +140,109 @@ document.addEventListener("DOMContentLoaded", () => {
         apiStatus.style.color = '#00aa00';
       }
       
+      // Update server status
       if (data.online) {
         statusText.textContent = 'Online';
         statusText.style.color = '#00aa00';
         
-        if (data.players && typeof data.players.online !== 'undefined' && typeof data.players.max !== 'undefined') {
-          playerCount.textContent = `${data.players.online} / ${data.players.max}`;
+        // Player count
+        if (data.playerCountDisplay) {
+          playerCount.textContent = data.playerCountDisplay;
+        } else if (data.playerCount !== undefined && data.maxPlayers !== undefined) {
+          playerCount.textContent = `${data.playerCount} / ${data.maxPlayers}`;
         } else {
           playerCount.textContent = 'N/A';
         }
         
-        // Server IP
-        if (serverIp && data.ip) {
-          serverIp.textContent = data.ip;
-        } else if (serverIp) {
-          serverIp.textContent = 'N/A';
-        }
-        
-        // Server Port
-        if (serverPort && data.port) {
-          serverPort.textContent = data.port;
-        } else if (serverPort) {
-          serverPort.textContent = '25565 (default)';
-        }
-        
-        // Server Version
-        if (serverVersion && data.version) {
-          serverVersion.textContent = data.version;
-        } else if (serverVersion) {
-          serverVersion.textContent = 'N/A';
-        }
-        
-        // Protocol Version
-        if (serverProtocol && data.protocol) {
-          serverProtocol.textContent = data.protocol;
-        } else if (serverProtocol) {
-          serverProtocol.textContent = 'N/A';
-        }
-        
-        // Server Software
-        if (serverSoftware && data.software) {
-          serverSoftware.textContent = data.software;
-        } else if (serverSoftware) {
-          serverSoftware.textContent = 'Unknown';
-        }
-        
-        // MOTD
-        if (serverMotd) {
-          if (data.motd && data.motd.clean) {
-            serverMotd.textContent = Array.isArray(data.motd.clean) 
-              ? data.motd.clean.join(' ') 
-              : data.motd.clean;
-          } else if (data.motd && Array.isArray(data.motd)) {
-            serverMotd.textContent = data.motd.map(line => line.clean || line).join(' ');
-          } else {
-            serverMotd.textContent = 'N/A';
+        // TPS
+        if (data.tps !== undefined) {
+          formatTPS(data.tps);
+        } else {
+          const tpsElement = document.getElementById('tps-value');
+          if (tpsElement) {
+            tpsElement.textContent = 'N/A';
+            tpsElement.className = 'debug-value tps-indicator';
           }
         }
+        
+        // Uptime
+        if (uptimeValue && data.uptime) {
+          if (data.uptime.formatted) {
+            uptimeValue.textContent = data.uptime.formatted;
+          } else if (data.uptime.milliseconds) {
+            const seconds = Math.floor(data.uptime.milliseconds / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            uptimeValue.textContent = `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+          } else {
+            uptimeValue.textContent = 'N/A';
+          }
+        }
+        
+        // Server Info
+        if (serverName && data.serverInfo) {
+          serverName.textContent = data.serverInfo.name || 'N/A';
+        }
+        
+        if (serverVersion && data.serverInfo) {
+          serverVersion.textContent = data.serverInfo.version || 'N/A';
+        }
+        
+        if (serverMotd && data.serverInfo) {
+          serverMotd.textContent = data.serverInfo.motd || 'N/A';
+        }
+        
+        // World Info
+        if (worldTime && data.worldInfo) {
+          worldTime.textContent = data.worldInfo.timeOfDayFormatted || 'N/A';
+        }
+        
+        if (worldWeather && data.worldInfo) {
+          const weather = data.worldInfo.weather || 'N/A';
+          worldWeather.textContent = weather.charAt(0).toUpperCase() + weather.slice(1);
+        }
+        
+        if (worldDifficulty && data.worldInfo) {
+          const difficulty = data.worldInfo.difficulty || 'N/A';
+          worldDifficulty.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        }
+        
+        // Player list
+        if (data.players && Array.isArray(data.players)) {
+          updatePlayerList(data.players);
+        } else {
+          updatePlayerList([]);
+        }
+        
       } else {
+        // Server is offline
         statusText.textContent = 'Offline';
         statusText.style.color = '#ff0000';
         playerCount.textContent = '0 / 0';
         
-        // Clear other fields when offline
-        if (serverIp) serverIp.textContent = 'N/A';
-        if (serverPort) serverPort.textContent = 'N/A';
-        if (serverVersion) serverVersion.textContent = 'N/A';
-        if (serverProtocol) serverProtocol.textContent = 'N/A';
-        if (serverSoftware) serverSoftware.textContent = 'N/A';
-        if (serverMotd) serverMotd.textContent = 'Server is offline';
+        // Clear other fields
+        const clearFields = [
+          { id: 'tps-value', text: 'N/A' },
+          { id: 'uptime-value', text: 'N/A' },
+          { id: 'server-name', text: 'N/A' },
+          { id: 'server-version', text: 'N/A' },
+          { id: 'server-motd', text: 'Server is offline' },
+          { id: 'world-time', text: 'N/A' },
+          { id: 'world-weather', text: 'N/A' },
+          { id: 'world-difficulty', text: 'N/A' }
+        ];
+        
+        clearFields.forEach(field => {
+          const el = document.getElementById(field.id);
+          if (el) {
+            el.textContent = field.text;
+            if (field.id === 'tps-value') {
+              el.className = 'debug-value tps-indicator';
+            }
+          }
+        });
+        
+        updatePlayerList([]);
       }
       
       updateTimestamp();
@@ -195,19 +250,13 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error('Error fetching server status:', error);
       consecutiveErrors++;
       
-      // Implement exponential backoff on consecutive errors
-      if (consecutiveErrors > 3) {
-        const backoffTime = Math.min(60000 * Math.pow(2, consecutiveErrors - 3), 300000); // Max 5 minutes
-        rateLimitBackoff = Date.now() + backoffTime;
-      }
-      
       let errorMessage = 'Error';
-      if (error.message && error.message.includes('429')) {
-        errorMessage = 'Rate Limited';
-      } else if (error.message && error.message.includes('CORS')) {
-        errorMessage = 'CORS Error';
+      if (error.message && error.message.includes('Failed to fetch')) {
+        errorMessage = 'Connection Failed';
       } else if (error.message && error.message.includes('NetworkError')) {
         errorMessage = 'Network Error';
+      } else if (error.message && error.message.includes('CORS')) {
+        errorMessage = 'CORS Error';
       }
       
       if (apiStatus) {
@@ -224,90 +273,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       // Set error state for other fields
-      const errorFields = ['server-ip', 'server-port', 'server-version', 'server-protocol', 'server-software'];
+      const errorFields = [
+        'tps-value', 'uptime-value', 'server-name', 'server-version', 
+        'server-motd', 'world-time', 'world-weather', 'world-difficulty'
+      ];
       errorFields.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.textContent = 'Error';
-      });
-      
-      if (serverMotd) {
-        serverMotd.textContent = 'Unable to fetch server information';
-      }
-    }
-  }
-
-  // Ping testing function
-  async function testPing() {
-    // Check if we're in backoff period
-    if (pingBackoff > Date.now()) {
-      return; // Skip this ping attempt
-    }
-
-    const pingValue = document.getElementById('ping-value');
-    if (!pingValue) return;
-
-    try {
-      // Measure ping to Minecraft server by timing the query request
-      const startTime = performance.now();
-      const response = await fetch('https://api.mcsrvstat.us/3/ping.collegemc.com', {
-        method: 'GET',
-        cache: 'no-cache'
-      });
-      const endTime = performance.now();
-      
-      const ping = Math.round(endTime - startTime);
-      
-      // Handle rate limiting (429)
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        const backoffTime = retryAfter ? parseInt(retryAfter) * 1000 : 30000; // Default 30 seconds
-        pingBackoff = Date.now() + backoffTime;
-        pingValue.textContent = 'Rate Limited';
-        pingValue.style.color = '#FFA500';
-        console.warn('Ping rate limited. Backing off for', backoffTime / 1000, 'seconds');
-        return;
-      }
-      
-      if (response.ok) {
-        pingValue.textContent = ping;
-        pingBackoff = 0; // Reset backoff on success
-        
-        // Color code based on ping
-        if (ping < 50) {
-          pingValue.style.color = '#00aa00'; // Green for excellent
-        } else if (ping < 100) {
-          pingValue.style.color = '#90EE90'; // Light green for good
-        } else if (ping < 200) {
-          pingValue.style.color = '#FFA500'; // Orange for moderate
-        } else {
-          pingValue.style.color = '#ff0000'; // Red for high
+        if (el) {
+          el.textContent = 'Error';
+          if (id === 'tps-value') {
+            el.className = 'debug-value tps-indicator';
+          }
         }
-      } else {
-        pingValue.textContent = 'N/A';
-        pingValue.style.color = '#666';
-      }
-    } catch (error) {
-      // Only log CORS/network errors occasionally to avoid spam
-      if (Math.random() < 0.1) { // Log 10% of errors
-        console.error('Error testing ping:', error);
-      }
+      });
       
-      // Set backoff on network errors
-      if (error.message && (error.message.includes('CORS') || error.message.includes('NetworkError'))) {
-        pingBackoff = Date.now() + 10000; // 10 second backoff for network errors
-      }
-      
-      pingValue.textContent = 'N/A';
-      pingValue.style.color = '#666';
+      updatePlayerList([]);
     }
   }
 
-  // Fetch server status on load and every 30 seconds
+  // Fetch server status on load and every 5 seconds
   fetchServerStatus();
-  setInterval(fetchServerStatus, 30000);
-
-  // Test ping on load and every 5 seconds (reduced frequency to avoid rate limiting)
-  testPing();
-  setInterval(testPing, 5000);
+  setInterval(fetchServerStatus, 5000);
 });
-
