@@ -12,7 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ⚠️ IMPORTANT: The API server must be started manually on the Minecraft server
   // using the command: /serverapi start
   // The API server is disabled by default and will NOT auto-start.
-  const API_BASE_URL = 'http://104.204.222.149:8000';
+  // Using CORS proxy to work around mixed content (HTTPS site can't load HTTP resources)
+  // The proxy forwards HTTPS requests to the HTTP API endpoint
+  const API_SERVER = 'http://104.204.222.149:8000';
+  const API_BASE_URL = `https://corsproxy.io/?${API_SERVER}`;
 
   let lastApiData = null;
   let consecutiveErrors = 0;
@@ -20,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Update API endpoint display
   const apiEndpoint = document.getElementById('api-endpoint');
   if (apiEndpoint) {
-    apiEndpoint.textContent = `${API_BASE_URL}/api`;
+    apiEndpoint.textContent = `${API_SERVER}/api (via CORS proxy)`;
   }
 
   // Toggle raw data display
