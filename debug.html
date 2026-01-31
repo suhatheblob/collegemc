@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Debug - CollegeMC</title>
   
-  <!-- Favicon -->
+  <!-- Favicon & screen icons -->
   <link rel="icon" type="image/png" href="images/logo_cmc.png">
+  <link rel="apple-touch-icon" href="images/logo_cmc.png">
   
   <!-- Stylesheets & Fonts -->
   <link rel="stylesheet" href="styles.css">
@@ -37,6 +38,46 @@
       border: 2px dashed white;
     }
     
+    .debug-nav-links {
+      margin-bottom: 16px;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 14px;
+    }
+    .debug-back-link {
+      color: #544c4a;
+      font-weight: 600;
+      text-decoration: none;
+      opacity: 0.9;
+      transition: opacity 0.2s ease;
+    }
+    .debug-back-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .debug-nav-sep {
+      margin: 0 8px;
+      color: rgba(84, 76, 74, 0.5);
+    }
+    .debug-quick-link {
+      color: #544c4a;
+      text-decoration: none;
+      opacity: 0.8;
+      transition: opacity 0.2s ease;
+    }
+    .debug-quick-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .debug-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .debug-actions .toggle-button {
+      margin-bottom: 0;
+    }
     .debug-card h1 {
       font-size: 36px;
       margin-bottom: 30px;
@@ -157,8 +198,19 @@
 <body>
   <div class="debug-container">
     <img src="images/logo_cmc.png" alt="College Minecraft Logo" class="logo">
+    <div class="debug-nav-links">
+      <a href="index.html" class="debug-back-link">← Back to site</a>
+      <span class="debug-nav-sep">·</span>
+      <a href="https://map.collegemc.com" target="_blank" rel="noopener" class="debug-quick-link">Map</a>
+      <span class="debug-nav-sep">·</span>
+      <a href="https://playerstats.collegemc.com/hof" target="_blank" rel="noopener" class="debug-quick-link">Leaderboard</a>
+    </div>
     <div class="debug-card">
       <h1>🔧 Debug Information</h1>
+      <div class="debug-actions">
+        <button type="button" id="debug-refresh" class="toggle-button">🔄 Refresh now</button>
+        <button type="button" id="debug-copy-raw" class="toggle-button" title="Copy raw API JSON to clipboard">📋 Copy Raw JSON</button>
+      </div>
       
       <div class="debug-section">
         <h2>Server Status</h2>
@@ -221,8 +273,36 @@
           API Status: <span class="debug-value" id="api-status">--</span>
         </p>
         <p class="debug-info">
+          Consecutive Errors: <span class="debug-value" id="consecutive-errors">0</span>
+        </p>
+        <p class="debug-info">
           API Endpoint: <span class="debug-value" id="api-endpoint">--</span>
         </p>
+      </div>
+      
+      <div class="debug-section">
+        <h2>Environment</h2>
+        <p class="debug-info">
+          Viewport: <span class="debug-value" id="debug-viewport">--</span>
+        </p>
+        <p class="debug-info">
+          Network: <span class="debug-value" id="debug-online">--</span>
+        </p>
+        <p class="debug-info">
+          User Agent: <span class="debug-value" id="debug-ua" style="font-size: 11px; word-break: break-all;">--</span>
+        </p>
+      </div>
+      
+      <div class="debug-section">
+        <h2>Information</h2>
+        <p class="debug-info">Servers that failed to load (status check):</p>
+        <ul class="player-list" id="server-failed-list">
+          <li class="player-item">Checking...</li>
+        </ul>
+        <p class="debug-info" style="margin-top: 12px;">Servers that loaded OK:</p>
+        <ul class="player-list" id="server-ok-list">
+          <li class="player-item">Checking...</li>
+        </ul>
       </div>
       
       <div class="debug-section">
@@ -231,7 +311,7 @@
         <pre id="raw-data" class="raw-data hidden"></pre>
       </div>
       
-      <p class="update-info">Updates every 5 seconds</p>
+      <p class="update-info">Vanilla API: every 5s · Server list: every 15s</p>
     </div>
   </div>
 </body>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page not found - CollegeMC</title>
+  <link rel="icon" type="image/png" href="images/logo_cmc.png">
+  <link rel="apple-touch-icon" href="images/logo_cmc.png">
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    .error-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .error-card {
+      background: linear-gradient(145deg, #FFC4D1 0%, #FFB6C1 100%);
+      padding: 40px;
+      border-radius: 18px;
+      box-shadow: 0 6px 20px rgba(255, 150, 170, 0.3);
+      border: 2px dashed white;
+      max-width: 420px;
+    }
+    .error-card h1 {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 28px;
+      color: #544c4a;
+      margin: 0 0 12px;
+    }
+    .error-card p {
+      font-family: 'Quicksand', sans-serif;
+      color: #333;
+      margin: 0 0 24px;
+    }
+    .error-card .error-code {
+      font-size: 14px;
+      color: rgba(84, 76, 74, 0.7);
+      margin-bottom: 20px;
+    }
+    .error-card a {
+      display: inline-block;
+      background: #FF9DB5;
+      color: white;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-family: 'Quicksand', sans-serif;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .error-card a:hover {
+      background: #FF7A9D;
+      transform: scale(1.04);
+    }
+  </style>
+</head>
+<body>
+  <div class="error-wrap">
+    <img src="images/logo_cmc.png" alt="CollegeMC" width="80" height="80" style="margin-bottom: 16px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));">
+    <div class="error-card">
+      <h1>Page not found</h1>
+      <p class="error-code">404</p>
+      <p>This page doesn’t exist or was moved. Head back home and try again!</p>
+      <a href="index.html">← Back home</a>
+    </div>
+  </div>
+</body>
+</html>

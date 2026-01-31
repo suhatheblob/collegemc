@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Vanilla",
+    "address": "collegemc.com",
+    "addressCopy": "104.204.222.149:25605",
+    "statusSource": "collegemc",
+    "apiBase": "https://api.collegemc.com",
+    "apiPath": "/api"
+  },
+  {
+    "name": "Modded",
+    "address": "modded.collegemc.com",
+    "addressCopy": "104.204.222.149:26660",
+    "statusSource": "collegemc",
+    "apiBase": "https://moddedapi.collegemc.com",
+    "apiPath": "/api"
+  },
+  {
+    "name": "Hytale",
+    "address": "Coming soon",
+    "statusSource": "none"
+  }
+]

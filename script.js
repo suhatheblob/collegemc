@@ -11,130 +11,296 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.opacity = '1';
   }, 100);
 
+  // ----- Announcement banner (dismissible, stored in localStorage) -----
+  const BANNER_STORAGE_KEY = 'collegemc-banner-dismissed';
+  const announcementBanner = document.getElementById('announcement-banner');
+  const announcementDismiss = document.getElementById('announcement-dismiss');
+
+  if (announcementBanner && announcementDismiss) {
+    if (localStorage.getItem(BANNER_STORAGE_KEY) === 'true') {
+      announcementBanner.setAttribute('data-dismissed', 'true');
+      document.body.classList.add('banner-dismissed');
+    }
+    announcementDismiss.addEventListener('click', () => {
+      announcementBanner.setAttribute('data-dismissed', 'true');
+      document.body.classList.add('banner-dismissed');
+      localStorage.setItem(BANNER_STORAGE_KEY, 'true');
+    });
+  }
+
+  // ----- Nav: layered menu (Map / Leaderboard → Vanilla / Modded), hamburger or Back in center -----
+  const NAV_URLS = {
+    map: { vanilla: 'https://map.collegemc.com', modded: 'https://moddedmap.collegemc.com' },
+    leaderboard: { vanilla: 'https://playerstats.collegemc.com/hof', modded: 'https://moddedplayerstats.collegemc.com/hof' }
+  };
+
   const menuToggle = document.getElementById('menu-toggle');
-  const menuOptions = document.getElementById('menu-options');
-  
-  console.log('Menu Toggle Element:', menuToggle);
-  console.log('Menu Options Element:', menuOptions);
-  
-  if (menuToggle && menuOptions) {
-    let menuOpen = false;
-    
-    menuToggle.addEventListener('click', (e) => {
-      console.log('Menu button clicked!');
-      e.stopPropagation();
-      menuOpen = !menuOpen;
-      
-      if (menuOpen) {
-        menuOptions.classList.remove('hidden');
-        menuToggle.textContent = 'Close';
-        console.log('Menu opened');
+  const navBack = document.getElementById('nav-back');
+  const navMenu = document.getElementById('nav-menu');
+  const navItemLeft = document.getElementById('nav-item-left');
+  const navItemRight = document.getElementById('nav-item-right');
+
+  if (menuToggle && navBack && navMenu && navItemLeft && navItemRight) {
+    let navLevel = 0; // 0 = main (Web Map, Leaderboard), 1 = submenu (Vanilla, Modded)
+
+    function renderMainMenu() {
+      navItemLeft.innerHTML = `<button type="button" class="nav-link" data-nav="map">
+        <span class="nav-link-icon" aria-hidden="true">🗺️</span>
+        <span class="nav-link-label">Web Map</span>
+      </button>`;
+      navItemRight.innerHTML = `<button type="button" class="nav-link" data-nav="leaderboard">
+        <span class="nav-link-icon" aria-hidden="true">🏆</span>
+        <span class="nav-link-label">Leaderboard</span>
+      </button>`;
+    }
+
+    function renderSubmenu(type) {
+      const urls = NAV_URLS[type];
+      const isMap = type === 'map';
+      navItemLeft.innerHTML = `<a href="${urls.vanilla}" class="nav-link" target="_blank" rel="noopener">
+        <span class="nav-link-icon" aria-hidden="true">${isMap ? '🗺️' : '🏆'}</span>
+        <span class="nav-link-label">Vanilla ${isMap ? 'Map' : 'Leaderboard'}</span>
+      </a>`;
+      navItemRight.innerHTML = `<a href="${urls.modded}" class="nav-link" target="_blank" rel="noopener">
+        <span class="nav-link-icon" aria-hidden="true">${isMap ? '🗺️' : '🏆'}</span>
+        <span class="nav-link-label">Modded ${isMap ? 'Map' : 'Leaderboard'}</span>
+      </a>`;
+    }
+
+    function setCenterButtons(level) {
+      navLevel = level;
+      if (level === 0) {
+        menuToggle.style.display = '';
+        navBack.style.display = 'none';
       } else {
-        menuOptions.classList.add('hidden');
-        menuToggle.textContent = 'Nav';
-        console.log('Menu closed');
+        menuToggle.style.display = 'none';
+        navBack.style.display = '';
+      }
+    }
+
+    function setNavOpen(open) {
+      const isOpen = !!open;
+      menuToggle.setAttribute('aria-expanded', isOpen);
+      menuToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+      navMenu.setAttribute('aria-expanded', isOpen);
+      if (!isOpen) {
+        navLevel = 0;
+        renderMainMenu();
+        setCenterButtons(0);
+      }
+    }
+
+    menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = navMenu.getAttribute('aria-expanded') === 'true';
+      if (isOpen) {
+        setNavOpen(false);
+      } else {
+        renderMainMenu();
+        setCenterButtons(0);
+        setNavOpen(true);
       }
     });
-    
+
+    navBack.addEventListener('click', (e) => {
+      e.stopPropagation();
+      renderMainMenu();
+      setCenterButtons(0);
+    });
+
+    navMenu.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-nav]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const type = btn.getAttribute('data-nav');
+      if (type === 'map' || type === 'leaderboard') {
+        renderSubmenu(type);
+        setCenterButtons(1);
+      }
+    });
+
     document.addEventListener('click', (e) => {
-      if (menuOpen && !e.target.closest('.floating-menu-container')) {
-        menuOptions.classList.add('hidden');
-        menuToggle.textContent = 'Nav';
-        menuOpen = false;
-        console.log('Menu closed by outside click');
+      if (navMenu.getAttribute('aria-expanded') === 'true' && !e.target.closest('.nav-wrap')) {
+        setNavOpen(false);
       }
     });
-  } else {
-    console.error('Menu elements not found!');
-  }
 
-  const copyButton = document.getElementById('copy-button');
-  const serverAddressBox = document.getElementById('server-address');
-  
-  function copyServerAddress() {
-    const serverAddress = document.getElementById('server-address').textContent;
-    navigator.clipboard.writeText(serverAddress).then(() => {
-      copyButton.textContent = '✓ Copied!';
-      copyButton.style.backgroundColor = '#90EE90';
-      setTimeout(() => {
-        copyButton.textContent = '📋 Copy';
-        copyButton.style.backgroundColor = '';
-      }, 2000);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && navMenu.getAttribute('aria-expanded') === 'true') {
+        if (navLevel === 1) {
+          renderMainMenu();
+          setCenterButtons(0);
+        } else {
+          setNavOpen(false);
+        }
+      }
     });
-  }
-  
-  if (copyButton) {
-    copyButton.addEventListener('click', copyServerAddress);
-  }
-  
-  if (serverAddressBox) {
-    serverAddressBox.addEventListener('click', copyServerAddress);
+
+    renderMainMenu();
   }
 
-  // API Configuration
-  // ⚠️ IMPORTANT: The API server must be started manually on the Minecraft server
-  // using the command: /serverapi start
-  // The API server is disabled by default and will NOT auto-start.
-  // Using Bloom.host reverse proxy for HTTPS access
-  const API_BASE_URL = 'https://api.collegemc.com';
+  // ----- Dynamic servers (from servers.json for GitHub Pages) -----
+  const SERVERS_JSON = 'servers.json';
+  const COLLEGEMC_API_BASE = 'https://api.collegemc.com';
+  const MCSTATUS_API = 'https://api.mcstatus.io/v2/status/java';
 
-  // Fetch server status from the Server Status API
-  async function fetchServerStatus() {
-    const statusText = document.getElementById('status-text');
-    const playerCount = document.getElementById('player-count');
-    
-    if (!statusText || !playerCount) {
-      console.error('Status elements not found');
+  /** Fetch status: CollegeMC custom API (same shape as debug.js) or mcstatus.io. Returns { online, playersDisplay } or null. */
+  async function fetchServerStatus(server) {
+    const source = server.statusSource || 'mcstatus';
+    if (source === 'none') return null;
+
+    if (source === 'collegemc') {
+      try {
+        const base = server.apiBase || COLLEGEMC_API_BASE;
+        const path = server.apiPath || '/api';
+        const res = await fetch(`${base}${path}`, { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const playersDisplay = data.playerCountDisplay != null
+          ? data.playerCountDisplay
+          : (data.playerCount != null && data.maxPlayers != null)
+            ? `${data.playerCount} / ${data.maxPlayers}`
+            : null;
+        return { online: !!data.online, playersDisplay: playersDisplay ?? null };
+      } catch {
+        return null;
+      }
+    }
+
+    try {
+      const res = await fetch(`${MCSTATUS_API}/${encodeURIComponent(server.address)}`, { cache: 'no-cache' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const cur = data.players?.online;
+      const max = data.players?.max;
+      const playersDisplay = (cur != null && max != null) ? `${cur} / ${max}` : null;
+      return { online: !!data.online, playersDisplay };
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadServers() {
+    const container = document.getElementById('server-cards');
+    const loading = document.getElementById('server-loading');
+    if (!container) return;
+
+    // Try multiple URLs so it works locally and on GitHub Pages
+    const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+    const base = pathname.endsWith('.html') ? pathname.replace(/\/[^/]*$/, '') : pathname;
+    const urlsToTry = [
+      (base ? base + '/' : './') + SERVERS_JSON,
+      '/servers.json',
+      './servers.json'
+    ].filter((u, i, a) => a.indexOf(u) === i);
+
+    let servers = [];
+    for (const url of urlsToTry) {
+      try {
+        const res = await fetch(url, { cache: 'no-cache' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          servers = data;
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    // Only include valid entries (name + address)
+    servers = servers.filter(s => s && typeof s.name === 'string' && typeof s.address === 'string');
+    if (servers.length === 0) {
+      container.innerHTML = '<p class="server-loading">No servers configured or servers.json could not be loaded. Add entries to servers.json.</p>';
+      if (loading) loading.remove();
       return;
     }
-    
-    try {
-      statusText.textContent = 'Checking...';
-      statusText.style.color = '#ffaa00';
-      
-      const response = await fetch(`${API_BASE_URL}/api`, {
-        method: 'GET',
-        cache: 'no-cache'
+
+    if (loading) loading.remove();
+
+    container.innerHTML = servers.map((server, i) => {
+        const cardId = `server-card-${i}`;
+        const statusId = `server-status-${i}`;
+        const playersId = `server-players-${i}`;
+        const displayAddr = escapeHtml(server.address);
+        const copyAddr = escapeHtml(server.addressCopy != null ? server.addressCopy : server.address);
+        const name = escapeHtml(server.name);
+        const noStatus = (server.statusSource || '') === 'none';
+        const statusInitial = noStatus ? '—' : '...';
+        const playersInitial = noStatus ? '—' : '...';
+        return `<div class="server-card" id="${cardId}">
+  <p class="server-card-name">${name}</p>
+  <div class="server-address-container">
+    <code class="server-address" data-address="${copyAddr}" title="Click to copy">${displayAddr}</code>
+    <button type="button" class="copy-button" data-address="${copyAddr}" aria-label="Copy address">📋 Copy</button>
+  </div>
+  <p class="server-status">🟢 Status: <span class="server-status-unknown" id="${statusId}" data-checked="${noStatus}" data-no-status="${noStatus}">${statusInitial}</span></p>
+  <p class="player-count">👥 Players: <span class="server-players" id="${playersId}">${playersInitial}</span></p>
+</div>`;
+      }).join('');
+
+      container.querySelectorAll('.copy-button').forEach(btn => {
+        btn.addEventListener('click', () => copyAddress(btn.dataset.address, btn));
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.online) {
-        statusText.textContent = 'Online';
-        statusText.style.color = '#00aa00';
-        
-        if (data.playerCountDisplay) {
-          playerCount.textContent = data.playerCountDisplay;
-        } else if (data.playerCount !== undefined && data.maxPlayers !== undefined) {
-          playerCount.textContent = `${data.playerCount} / ${data.maxPlayers}`;
-        } else {
-          playerCount.textContent = 'N/A';
+      container.querySelectorAll('.server-address').forEach(el => {
+        el.addEventListener('click', () => copyAddress(el.dataset.address, el.nextElementSibling));
+      });
+
+      async function refreshAllStatuses() {
+        for (let i = 0; i < servers.length; i++) {
+          const server = servers[i];
+          const statusEl = document.getElementById(`server-status-${i}`);
+          const playersEl = document.getElementById(`server-players-${i}`);
+          if (!statusEl || !playersEl) continue;
+          if (statusEl.dataset.noStatus === 'true') continue;
+          statusEl.textContent = 'Checking...';
+          statusEl.className = 'server-status-unknown';
+          statusEl.dataset.checked = 'true';
+          let data = null;
+          try {
+            data = await fetchServerStatus(server);
+          } catch {
+            data = null;
+          }
+          if (data?.online) {
+            statusEl.textContent = 'Online';
+            statusEl.className = 'server-status-online';
+            playersEl.textContent = data.playersDisplay || 'N/A';
+          } else {
+            statusEl.textContent = data === null ? 'Unknown' : 'Offline';
+            statusEl.className = data === null ? 'server-status-unknown' : 'server-status-offline';
+            playersEl.textContent = data === null ? 'N/A' : '0 / 0';
+          }
         }
-      } else {
-        statusText.textContent = 'Offline';
-        statusText.style.color = '#ff0000';
-        playerCount.textContent = '0 / 0';
       }
-    } catch (error) {
-      console.error('Error fetching server status:', error);
-      
-      if (statusText) {
-        statusText.textContent = 'Unknown';
-        statusText.style.color = '#666';
-      }
-      if (playerCount) {
-        playerCount.textContent = 'N/A';
-      }
-    }
+
+      await refreshAllStatuses();
+      setInterval(refreshAllStatuses, 30000);
   }
 
-  // Fetch server status on load and every 30 seconds
-  fetchServerStatus();
-  setInterval(fetchServerStatus, 30000);
+  function copyAddress(address, buttonEl) {
+    if (!address) return;
+    navigator.clipboard.writeText(address).then(() => {
+      if (buttonEl?.classList?.contains('copy-button')) {
+        buttonEl.textContent = '✓ Copied!';
+        buttonEl.classList.add('copied');
+        setTimeout(() => {
+          buttonEl.textContent = '📋 Copy';
+          buttonEl.classList.remove('copied');
+        }, 2000);
+      }
+    });
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement('div');
+    div.textContent = s == null ? '' : String(s);
+    return div.innerHTML;
+  }
+
+  loadServers();
 
 
   function updateFlowerCounter() {

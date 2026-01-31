@@ -24,9 +24,71 @@ document.addEventListener("DOMContentLoaded", () => {
     apiEndpoint.textContent = `${API_BASE_URL}/api`;
   }
 
-  // Toggle raw data display
   const toggleButton = document.getElementById('toggle-raw');
   const rawData = document.getElementById('raw-data');
+
+  // Consecutive errors display
+  function updateConsecutiveErrors() {
+    const el = document.getElementById('consecutive-errors');
+    if (el) el.textContent = consecutiveErrors;
+  }
+
+  // Environment (viewport, online, user agent)
+  function updateEnvironment() {
+    const viewportEl = document.getElementById('debug-viewport');
+    const onlineEl = document.getElementById('debug-online');
+    const uaEl = document.getElementById('debug-ua');
+    if (viewportEl) {
+      viewportEl.textContent = `${window.innerWidth} × ${window.innerHeight}`;
+    }
+    if (onlineEl) {
+      onlineEl.textContent = navigator.onLine ? 'Online' : 'Offline';
+      onlineEl.style.color = navigator.onLine ? '#00aa00' : '#cc0000';
+    }
+    if (uaEl) {
+      const ua = navigator.userAgent;
+      uaEl.textContent = ua.length > 80 ? ua.slice(0, 80) + '…' : ua;
+    }
+  }
+  updateEnvironment();
+  window.addEventListener('resize', updateEnvironment);
+  window.addEventListener('online', updateEnvironment);
+  window.addEventListener('offline', updateEnvironment);
+
+  // Refresh now button
+  const refreshBtn = document.getElementById('debug-refresh');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = 'Refreshing…';
+      await fetchServerStatus();
+      await updateServerLoadInfo();
+      updateConsecutiveErrors();
+      refreshBtn.textContent = '🔄 Refresh now';
+      refreshBtn.disabled = false;
+    });
+  }
+
+  // Copy Raw JSON button
+  const copyRawBtn = document.getElementById('debug-copy-raw');
+  if (copyRawBtn && rawData) {
+    copyRawBtn.addEventListener('click', () => {
+      if (!lastApiData) {
+        copyRawBtn.textContent = 'No data yet';
+        setTimeout(() => { copyRawBtn.textContent = '📋 Copy Raw JSON'; }, 1500);
+        return;
+      }
+      navigator.clipboard.writeText(JSON.stringify(lastApiData, null, 2)).then(() => {
+        copyRawBtn.textContent = '✓ Copied!';
+        setTimeout(() => { copyRawBtn.textContent = '📋 Copy Raw JSON'; }, 2000);
+      }).catch(() => {
+        copyRawBtn.textContent = 'Copy failed';
+        setTimeout(() => { copyRawBtn.textContent = '📋 Copy Raw JSON'; }, 1500);
+      });
+    });
+  }
+
+  // Toggle raw data display
   if (toggleButton && rawData) {
     toggleButton.addEventListener('click', () => {
       if (rawData.classList.contains('hidden')) {
@@ -127,6 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Reset error counter on success
       consecutiveErrors = 0;
+      updateConsecutiveErrors();
       
       const data = await response.json();
       lastApiData = data;
@@ -250,6 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error('Error fetching server status:', error);
       consecutiveErrors++;
+      updateConsecutiveErrors();
       
       let errorMessage = 'Error';
       if (error.message && error.message.includes('Failed to fetch')) {
@@ -295,4 +359,97 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fetch server status on load and every 5 seconds
   fetchServerStatus();
   setInterval(fetchServerStatus, 5000);
+
+  // ----- Information: which servers failed to load (status check) -----
+  const SERVERS_JSON = 'servers.json';
+  const COLLEGEMC_API_BASE = 'https://api.collegemc.com';
+  const MCSTATUS_API = 'https://api.mcstatus.io/v2/status/java';
+
+  async function fetchOneServerStatus(server) {
+    const source = server.statusSource || 'mcstatus';
+    if (source === 'none') return { skipped: true };
+    if (source === 'collegemc') {
+      try {
+        const base = server.apiBase || COLLEGEMC_API_BASE;
+        const path = server.apiPath || '/api';
+        const res = await fetch(`${base}${path}`, { cache: 'no-cache' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return { online: !!data.online };
+      } catch {
+        return null;
+      }
+    }
+    try {
+      const res = await fetch(`${MCSTATUS_API}/${encodeURIComponent(server.address)}`, { cache: 'no-cache' });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return { online: !!data.online };
+    } catch {
+      return null;
+    }
+  }
+
+  async function updateServerLoadInfo() {
+    const failedList = document.getElementById('server-failed-list');
+    const okList = document.getElementById('server-ok-list');
+    if (!failedList || !okList) return;
+
+    const pathname = window.location.pathname.replace(/\/$/, '') || '/';
+    const base = pathname.endsWith('.html') ? pathname.replace(/\/[^/]*$/, '') : pathname;
+    const urlsToTry = [
+      (base ? base + '/' : './') + SERVERS_JSON,
+      '/servers.json',
+      './servers.json'
+    ].filter((u, i, a) => a.indexOf(u) === i);
+
+    let servers = [];
+    for (const url of urlsToTry) {
+      try {
+        const res = await fetch(url, { cache: 'no-cache' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          servers = data.filter(s => s && typeof s.name === 'string' && typeof s.address === 'string');
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    if (servers.length === 0) {
+      failedList.innerHTML = '<li class="player-item">Could not load servers.json</li>';
+      okList.innerHTML = '<li class="player-item">—</li>';
+      return;
+    }
+
+    const failed = [];
+    const ok = [];
+    for (const server of servers) {
+      const label = `${server.name} (${server.address})`;
+      if ((server.statusSource || '') === 'none') {
+        ok.push(`${label} — no status check`);
+        continue;
+      }
+      const result = await fetchOneServerStatus(server);
+      if (result?.skipped) {
+        ok.push(`${label} — skipped`);
+      } else if (result?.online) {
+        ok.push(label);
+      } else {
+        failed.push(label);
+      }
+    }
+
+    failedList.innerHTML = failed.length === 0
+      ? '<li class="player-item">None</li>'
+      : failed.map(s => `<li class="player-item">${s}</li>`).join('');
+    okList.innerHTML = ok.length === 0
+      ? '<li class="player-item">None</li>'
+      : ok.map(s => `<li class="player-item">${s}</li>`).join('');
+  }
+
+  updateServerLoadInfo();
+  setInterval(updateServerLoadInfo, 15000);
 });
